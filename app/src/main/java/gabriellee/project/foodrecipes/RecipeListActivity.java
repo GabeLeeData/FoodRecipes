@@ -1,6 +1,9 @@
 package gabriellee.project.foodrecipes;
 
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.os.Parcelable;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,6 +19,8 @@ import gabriellee.project.foodrecipes.requests.ServiceGenerator;
 import gabriellee.project.foodrecipes.requests.response.RecipeResponse;
 import gabriellee.project.foodrecipes.requests.response.RecipeSearchResponse;
 import gabriellee.project.foodrecipes.util.Constants;
+import gabriellee.project.foodrecipes.util.Testing;
+import gabriellee.project.foodrecipes.viewmodels.RecipeListViewModel;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -23,11 +28,16 @@ import retrofit2.Response;
 public class RecipeListActivity extends BaseActivity {
 
     private static final String TAG = "RecipeListActivity";
+
+    private RecipeListViewModel mRecipeListViewModel;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recipe_list);
 
+        mRecipeListViewModel = ViewModelProviders.of(this).get(RecipeListViewModel.class);
+        subscribeObservers();
         findViewById(R.id.test).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -36,74 +46,26 @@ public class RecipeListActivity extends BaseActivity {
         });
     }
 
-    private void testRetrofitRequest() {
-        RecipeApi recipeApi = ServiceGenerator.getRecipeApi();
+    public void searchRecipesApi(String query, int pageNumber) {
+        mRecipeListViewModel.searchRecipesApi(query, pageNumber);
+    }
 
-//        Call<RecipeSearchResponse> responseCall = recipeApi.searchRecipe(
-//                Constants.API_KEY,
-//                "chicken breast",
-//                "1"
-//        );
-//
-//        responseCall.enqueue(new Callback<RecipeSearchResponse>() {
-//            @Override
-//            public void onResponse(Call<RecipeSearchResponse> call, Response<RecipeSearchResponse> response) {
-//                Log.d(TAG, "onResponse: server response " + response.toString());
-//                if(response.code() == 200){
-//                    Log.d(TAG, "onResponse: " +response.body().toString());
-//                    List<Recipe> recipes = new ArrayList<>(response.body().getRecipes());
-//                    for(Recipe recipe: recipes) {
-//                        Log.d(TAG, "onResponse: " +recipe.getTitle());
-//
-//                    }
-//                }
-//                else {
-//                    try{
-//                        Log.d(TAG, "onResponse: " + response.errorBody().string());
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }
-//
-//            @Override
-//            public void onFailure(Call<RecipeSearchResponse> call, Throwable t) {
-//
-//            }
-//        });
-
-            Call<RecipeResponse> responseCall = recipeApi.getRecipe(
-            Constants.API_KEY,
-            "8c0314"
-        );
-
-        responseCall.enqueue(new Callback<RecipeResponse>() {
+    private void subscribeObservers() {
+        mRecipeListViewModel.getRecipes().observe(this, new Observer<List<Recipe>>() {
             @Override
-            public void onResponse(Call<RecipeResponse> call, Response<RecipeResponse> response) {
-                Log.d(TAG, "onResponse: server response" +response.body().toString());
-
-                if(response.code() == 200){
-                    Log.d(TAG, "onResponse: " +response.body().toString());
-                    Recipe recipe = response.body().getRecipe();
-                    Log.d(TAG, "onResponse: RETRIEVED RECIPE: " + recipe.toString());
-                }
-                else {
-                    try{
-                        Log.d(TAG, "onResponse: " + response.errorBody().string());
-                    } catch (IOException e) {
-                        e.printStackTrace();
+            public void onChanged(@Nullable List<Recipe> recipes) {
+                if(recipes != null) {
+                    for(Recipe recipe: recipes){
+                        Testing.printRecipes(recipes, "recipes test");
                     }
                 }
 
             }
-
-            @Override
-            public void onFailure(Call<RecipeResponse> call, Throwable t) {
-
-            }
         });
+    }
 
-
+    private void testRetrofitRequest() {
+       searchRecipesApi("chicken breast", 1);
     }
 
 }
